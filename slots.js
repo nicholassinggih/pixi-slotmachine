@@ -119,6 +119,24 @@ function onAssetsLoaded() {
     woodenBg.height = INIT_HEIGHT;
     loadingStage.addChild(woodenBg);
 
+    const pikachuLogo = new PIXI.Sprite();
+    pikachuLogo.texture = PIXI.Texture.from('pikachu-icon.png')
+    pikachuLogo.x = INIT_WIDTH * 0.25;
+    pikachuLogo.y = INIT_HEIGHT * 0.05;
+    loadingStage.addChild(pikachuLogo);
+    
+    const pokemonTitle = new PIXI.Sprite();
+    pokemonTitle.texture = PIXI.Texture.from('pokemon-logo.png')
+    pokemonTitle.x = (INIT_WIDTH - pokemonTitle.width) / 2;
+    pokemonTitle.y = (INIT_HEIGHT - pokemonTitle.height) / 2;
+    loadingStage.addChild(pokemonTitle);
+
+    const slotLogo = new PIXI.Sprite();
+    slotLogo.texture = PIXI.Texture.from('slot-logo.png')
+    slotLogo.x = (INIT_WIDTH - slotLogo.width) / 2;
+    slotLogo.y = (INIT_HEIGHT + (0.9 * slotLogo.height)) / 2;
+    loadingStage.addChild(slotLogo);
+
     // build a container for the game layer
     const gameLayer = new PIXI.Container();
     gameLayer.x = 0;
