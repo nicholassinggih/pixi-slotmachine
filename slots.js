@@ -108,15 +108,36 @@ function onAssetsLoaded() {
         return PIXI.Texture.from(f);
     }); 
     
+
+    // create loading screen
+    const loadingStage = new PIXI.Container();
+    loadingStage.x = 0;
+    loadingStage.y = 0;
+    const woodenBg = new PIXI.TilingSprite();
+    woodenBg.texture = PIXI.Texture.from('wooden-bg.png');
+    woodenBg.width = INIT_WIDTH;
+    woodenBg.height = INIT_HEIGHT;
+    loadingStage.addChild(woodenBg);
+
+    // build a container for the game layer
+    const gameLayer = new PIXI.Container();
+    gameLayer.x = 0;
+    gameLayer.y = 0;
+    app.stage.addChild(gameLayer);
+
+    app.stage.addChild(loadingStage);
+
     // Build the reels
     const reels = [];
     const reelContainer = buildReels(reels);
-    app.stage.addChild(reelContainer);
+    gameLayer.addChild(reelContainer);
+
 
     // Build topBar & bottomBar covers and position reelContainer
-    buildHUD();
+    buildHUD(gameLayer);
 
     let running = false;
+
     
     getContainerDiv().appendChild(getParentCanvas());
     resize();
@@ -245,7 +266,7 @@ function onAssetsLoaded() {
     }
 
 
-    function buildHUD() {
+    function buildHUD(gameLayer) {
         margin = SYMBOL_SIZE * 1;// (app.screen.height - 20 - SYMBOL_SIZE * (SYMBOL_PER_REEL)) / 2;
         // margin = (app.screen.height - reelContainer.height ) / 2;
         reelContainer.y = (2 - HIDDEN_SYMBOLS) * (SYMBOL_SIZE + SYMBOL_MARGIN);
@@ -294,8 +315,8 @@ function onAssetsLoaded() {
         headerText.y = Math.round((margin - headerText.height) / 2);
         topBar.addChild(headerText);
 
-        app.stage.addChild(topBar);
-        app.stage.addChild(bottomBar);
+        gameLayer.addChild(topBar);
+        gameLayer.addChild(bottomBar);
 
         // Set the interactivity.
         normalSpin.interactive = true;
