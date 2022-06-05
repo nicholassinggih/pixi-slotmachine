@@ -58,10 +58,12 @@ const smallFont = new PIXI.TextStyle({
 });
 const headerText = new PIXI.Text('POKEMON SLOTS', titleStyle);
 const normalSpin = new PIXI.Text('Normal Spin', smallFont);
-const win1x = new PIXI.Text('Win 1x', smallFont);
-const win2x = new PIXI.Text('Win 1x', smallFont);
-const win3x = new PIXI.Text('Win 1x', smallFont);
-const win4x = new PIXI.Text('Win 1x', smallFont);
+const winningSpin = new PIXI.Text('Winning Spins', smallFont);
+const win1x = new PIXI.Text('1x', smallFont);
+const win2x = new PIXI.Text('2x', smallFont);
+const win3x = new PIXI.Text('3x', smallFont);
+const win4x = new PIXI.Text('4x', smallFont);
+const win5x = new PIXI.Text('5x', smallFont);
 
 document.body.appendChild(app.view);
 console.log(app.screen.height);
@@ -190,7 +192,6 @@ function onAssetsLoaded() {
         if (running) return;
         running = true;
 
-        resultType = { win : 3};
         let results = getEndResults(resultType);
 
         let tweenMode = Math.floor(Math.random() * 3);
@@ -264,6 +265,30 @@ function onAssetsLoaded() {
         normalSpin.y = ( bottomBar.height - normalSpin.height ) / 2; 
         bottomBar.addChild(normalSpin);
 
+        winningSpin.x = normalSpin.x + normalSpin.width + 20;
+        winningSpin.y = normalSpin.y - winningSpin.height; 
+        bottomBar.addChild(winningSpin);
+
+        win1x.x = winningSpin.x;
+        win1x.y = normalSpin.y;
+        bottomBar.addChild(win1x);
+
+        win2x.x = win1x.x + win1x.width + 5;
+        win2x.y = normalSpin.y;
+        bottomBar.addChild(win2x);
+
+        win3x.x = win2x.x + win2x.width + 5;
+        win3x.y = normalSpin.y;
+        bottomBar.addChild(win3x);
+
+        win4x.x = win3x.x + win3x.width + 5;
+        win4x.y = normalSpin.y;
+        bottomBar.addChild(win4x);
+
+        win5x.x = win4x.x + win4x.width + 5;
+        win5x.y = normalSpin.y;
+        bottomBar.addChild(win5x);
+
         // Add header text
         headerText.x = Math.round((topBar.width - headerText.width) / 2);
         headerText.y = Math.round((margin - headerText.height) / 2);
@@ -277,6 +302,36 @@ function onAssetsLoaded() {
         normalSpin.buttonMode = true;
         normalSpin.addListener('pointerdown', () => {
             startPlay();
+        });
+
+        win1x.interactive = true;
+        win1x.buttonMode = true;
+        win1x.addListener('pointerdown', () => {
+            startPlay({win: 1});
+        });
+
+        win2x.interactive = true;
+        win2x.buttonMode = true;
+        win2x.addListener('pointerdown', () => {
+            startPlay({win: 2});
+        });
+
+        win3x.interactive = true;
+        win3x.buttonMode = true;
+        win3x.addListener('pointerdown', () => {
+            startPlay({win: 3});
+        });
+
+        win4x.interactive = true;
+        win4x.buttonMode = true;
+        win4x.addListener('pointerdown', () => {
+            startPlay({win: 4});
+        });
+
+        win5x.interactive = true;
+        win5x.buttonMode = true;
+        win5x.addListener('pointerdown', () => {
+            startPlay({win: 5});
         });
     }
 
