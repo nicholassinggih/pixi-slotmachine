@@ -64,6 +64,7 @@ const win2x = new PIXI.Text('2x', smallFont);
 const win3x = new PIXI.Text('3x', smallFont);
 const win4x = new PIXI.Text('4x', smallFont);
 const win5x = new PIXI.Text('5x', smallFont);
+const winJackpot = new PIXI.Text('Jackpot!', smallFont);
 
 document.body.appendChild(app.view);
 console.log(app.screen.height);
@@ -220,8 +221,6 @@ function onAssetsLoaded() {
 
     let running = false;
 
-    
-
     function buildReels(reels) {
         let reelContainer = new PIXI.Container();
         for (let i = 0; i < REEL_COUNT; i++) {
@@ -232,6 +231,7 @@ function onAssetsLoaded() {
             const reel = {
                 container: rc,
                 symbols: [],
+                symbolCodes: [],
                 symbolImmutableFlag: Array(SYMBOL_PER_REEL).fill(false),
                 position: 0,
                 previousPosition: 0,
@@ -246,13 +246,14 @@ function onAssetsLoaded() {
             // Build the symbols
             for (let j = 0; j < SYMBOL_PER_REEL; j++) {
                 let id = (SYMBOL_PER_REEL - 1 - j) % data.matrix[i].length;
-                let symbolId = data.matrix[i][id] ?? Math.floor(Math.random() * slotTextures.length);
-                const symbol = new PIXI.Sprite(slotTextures[symbolId]);
+                let symbolCode = data.matrix[i][id] ?? Math.floor(Math.random() * slotTextures.length);
+                const symbol = new PIXI.Sprite(slotTextures[symbolCode]);
                 // Scale the symbol to fit symbol area.
                 symbol.y = (j - HIDDEN_SYMBOLS) * (SYMBOL_SIZE + SYMBOL_MARGIN);
                 symbol.scale.x = symbol.scale.y = Math.min(SYMBOL_SIZE / symbol.width, SYMBOL_SIZE / symbol.height);
                 symbol.x = Math.round((getReelWidth() - symbol.width) / 2);
                 reel.symbols.push(symbol);
+                reel.symbolCodes.push(symbolCode);
                 rc.addChild(symbol);
             }
             reels.push(reel);
@@ -267,6 +268,15 @@ function onAssetsLoaded() {
         }
 
         let n = SYMBOL_PER_REEL - HIDDEN_SYMBOLS;
+
+        if (resultType.jackpotWin) {
+            return Array.from({length: n}, () => {
+                return Array.from({length: REEL_COUNT}, () => {
+                    return 0;
+                })
+            });
+        }
+
         let results = Array.from({length:n}, () => {
             let arr =  Array.from({length: REEL_COUNT}, ()=> {
                 return Math.floor(Math.random() * slotTextures.length);
@@ -294,7 +304,7 @@ function onAssetsLoaded() {
         running = true;
 
         let results = getEndResults(resultType);
-
+        let movingReels = REEL_COUNT;
         let tweenMode = Math.floor(Math.random() * 3);
         for (let i = 0; i < reels.length; i++) {
             const r = reels[i];
@@ -327,6 +337,7 @@ function onAssetsLoaded() {
                                 let textureId = results[k][i];
                                 r.symbolImmutableFlag[id] = true;
                                 s.texture = slotTextures[textureId];
+                                r.symbolCodes[id] = textureId;
                                 s.scale.x = s.scale.y = Math.min(SYMBOL_SIZE / s.texture.width, SYMBOL_SIZE / s.texture.height);
                                 s.x = Math.round((getReelWidth() - s.width) / 2);
                             } 
@@ -334,7 +345,10 @@ function onAssetsLoaded() {
                         }, 0);
                     }
 
-                    tweenTo(r, 'position', target + HIDDEN_SYMBOLS, 2500, backout(0.5), null, i === reels.length - 1 ? reelsComplete : null);
+                    tweenTo(r, 'position', target + HIDDEN_SYMBOLS, 2500, backout(0.5), null, () => {
+                        movingReels--;
+                        if (movingReels == 0) reelsComplete();
+                    });
                 });
         }
 
@@ -343,8 +357,20 @@ function onAssetsLoaded() {
     // Reels done handler.
     function reelsComplete() {
         running = false;
+        setTimeout(() => {
+            checkMatches();
+        }, 0); 
     }
 
+    function checkMatches() {
+        let debugv = reels.map( r=> [r.symbolCodes, r.position, Math.floor(r.position) % SYMBOL_PER_REEL]);
+        console.log(reels.map(r => {
+            let offset = (SYMBOL_PER_REEL - (Math.floor(r.position) % SYMBOL_PER_REEL) + HIDDEN_SYMBOLS) % SYMBOL_PER_REEL;
+            let symbols = [...r.symbolCodes];
+            let moving = symbols.splice(0, offset);
+            return symbols.concat(...moving).splice(0, SYMBOL_PER_REEL - HIDDEN_SYMBOLS);
+        }));
+    }
 
     function buildHUD(gameLayer) {
         margin = SYMBOL_SIZE * 1;// (app.screen.height - 20 - SYMBOL_SIZE * (SYMBOL_PER_REEL)) / 2;
@@ -390,6 +416,10 @@ function onAssetsLoaded() {
         win5x.y = normalSpin.y;
         bottomBar.addChild(win5x);
 
+        winJackpot.x = win5x.x + win5x.width + 5;
+        winJackpot.y = normalSpin.y;
+        bottomBar.addChild(winJackpot);
+
         // Add header text
         headerText.x = Math.round((topBar.width - headerText.width) / 2);
         headerText.y = Math.round((margin - headerText.height) / 2);
@@ -434,6 +464,12 @@ function onAssetsLoaded() {
         win5x.addListener('pointerdown', () => {
             startPlay({win: 5});
         });
+
+        winJackpot.interactive = true;
+        winJackpot.buttonMode = true;
+        winJackpot.addListener('pointerdown', () => {
+            startPlay({win: 5, jackpotWin: true});
+        });
     }
 
     // Listen for animate update.
@@ -451,14 +487,12 @@ function onAssetsLoaded() {
                 const s = r.symbols[j];
                 const prevy = s.y;
                 const symbolPosition = r.position + j;
-                // let feedIndex = Math.floor(symbolPosition) - r.startingPosition - r.symbols.length;
-                // feedIndex = feedIndex % r.symbolFeed.length;
                 s.y = (((symbolPosition) % r.symbols.length) - 1) * (SYMBOL_SIZE + SYMBOL_MARGIN);
                 if (s.y < 0 && prevy > SYMBOL_SIZE && r.symbolImmutableFlag[j] == false) {
                     // Detect going over and swap a texture.
-                    // This should in proper product be determined from some logical reel.
-                    let nextSymbol = Math.floor(Math.random() * slotTextures.length); // r.symbolFeed.shift();
+                    let nextSymbol = Math.floor(Math.random() * slotTextures.length); 
                     s.texture = slotTextures[nextSymbol];
+                    r.symbolCodes[j] = nextSymbol;
                     s.scale.x = s.scale.y = Math.min(SYMBOL_SIZE / s.texture.width, SYMBOL_SIZE / s.texture.height);
                     s.x = Math.round((getReelWidth() - s.width) / 2);
                 }
