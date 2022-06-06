@@ -14,7 +14,7 @@ const IMG_FILES = [
 ]
 
 let playerData = {
-    score: 0
+    score: data.initialScore
 };
 
 const app = new PIXI.Application({ 
@@ -24,6 +24,7 @@ const app = new PIXI.Application({
 }); 
 
 let margin; 
+const reels = [];
 const topBar = new PIXI.Graphics();
 const bottomBar = new PIXI.Graphics();
 // Add play text
@@ -77,6 +78,22 @@ const moneyFont = new PIXI.TextStyle({
     wordWrapWidth: 440,
 });
 
+const winningFont = new PIXI.TextStyle({
+    fontFamily: 'Arial',
+    fontSize: 42,
+    fontWeight: 'bold',
+    fill: ['#ffff00'],
+    stroke: '#aac020',
+    strokeThickness: 8,
+    dropShadow: true,
+    dropShadowColor: '#000000',
+    dropShadowBlur: 4,
+    dropShadowAngle: Math.PI / 2,
+    dropShadowDistance: 7,
+    wordWrap: true,
+    wordWrapWidth: 440,
+});
+
 const headerText = new PIXI.Text('POKEMON SLOTS', titleStyle);
 const normalSpin = new PIXI.Text('Normal Spin', smallFont);
 const winningSpin = new PIXI.Text('Winning Spins', smallFont);
@@ -90,6 +107,13 @@ const scoreText = new PIXI.Text('Cash: $' + playerData.score, moneyFont);
 
 let symbolScale = {
     scale: 1
+};
+
+let topLayerScale = {
+    scale: 1,
+    offsetY: 0,
+    message1InitY: 0,
+    message2InitY: 0,
 };
 
 let animatedSymbols = [];
@@ -122,6 +146,30 @@ gameLayer.y = 0;
 gameLayer.width = INIT_WIDTH;
 gameLayer.height = INIT_HEIGHT;
 app.stage.addChild(gameLayer);
+
+// build a container for the top layer
+const topLayer = new PIXI.Container();
+topLayer.width = INIT_WIDTH;
+topLayer.height = INIT_HEIGHT;
+topLayer.x = 0;
+topLayer.y = 0;
+topLayer.visible = false;
+app.stage.addChild(topLayer);
+
+const topMessage1 = new PIXI.Text("YOU WON", winningFont);
+topLayerScale.message1InitY = (INIT_HEIGHT - topMessage1.height) / 2 - 50;
+topMessage1.y = topLayerScale.message1InitY;
+topMessage1.x = INIT_WIDTH / 2;
+topMessage1.anchor.set(0.5);
+topLayer.addChild(topMessage1);
+
+const topMessage2 = new PIXI.Text("$1000", winningFont);
+topLayerScale.message2InitY = (INIT_HEIGHT - topMessage2.height) / 2 - 10;
+topMessage2.y = topLayerScale.message2InitY;
+topMessage2.x = INIT_WIDTH / 2;
+topMessage2.anchor.set(0.5);
+topLayer.addChild(topMessage2);
+
 
 app.stage.addChild(loadingStage);
 
@@ -239,7 +287,6 @@ function onAssetsLoaded() {
     }); 
     
     // Build the reels
-    const reels = [];
     const reelContainer = buildReels(reels);
     gameLayer.addChild(reelContainer);
 
@@ -445,6 +492,16 @@ function onAssetsLoaded() {
         animatedSymbols = [];
     }
 
+    function setupWinMessage(line1, line2) {
+        topMessage1.text = line1;
+        topMessage2.text = line2;
+        topLayer.visible = true;
+    }
+
+    function decommissionTopLayer() {
+        topLayer.visible = false;
+    }
+
     function processWinning(result) {
 
         if (result.wins.length > 0) {
@@ -457,11 +514,27 @@ function onAssetsLoaded() {
                 })
             }));
 
+            if (result.jackpotWin) {
+                setupWinMessage("JACKPOT!!!", "$" + winning);
+            } else {
+                setupWinMessage("You Won " + result.wins.length + "x", "$" + winning);
+            }
+
+            topLayerScale.offsetY = 1000;
+            topLayerScale.scale = 20;
             tweenTo(symbolScale, 'scale', 1.8, 1400, bounceOut, null, () => {
-                tweenTo(symbolScale, 'scale', 1, 1400, bounceOut, null, () => {
+                tweenTo(symbolScale, 'scale', 1, 1800, bounceOut, null, () => {
                     unregisterSymbols();
-                    updateScore(playerData.score + winning);
-                })
+                });
+                tweenTo(topLayerScale, 'offsetY', 0, 2000, sineIn, null, null);
+                tweenTo(topLayerScale, 'scale', 1, 2000, sineIn, null, () => {
+                    setTimeout(() => {
+                        tweenTo(topLayerScale, 'offsetY', app.screen.height, 800, sineIn, null, () => {
+                            updateScore(playerData.score + winning);
+                            decommissionTopLayer();
+                        })
+                    }, 2000);
+                }) 
             })
 
         } else {
@@ -612,6 +685,13 @@ function onAssetsLoaded() {
         animatedSymbols.forEach(s => {
             s.scale.x = s.scale.y = Math.min(SYMBOL_SIZE / s.texture.width, SYMBOL_SIZE / s.texture.height) * symbolScale.scale;
         })
+    });
+
+    app.ticker.add((delta) => {
+        topMessage1.y = topLayerScale.message1InitY + topLayerScale.offsetY;
+        topMessage2.y = topLayerScale.message2InitY + topLayerScale.offsetY;
+        topMessage1.scale.x = topMessage1.scale.y = topLayerScale.scale;
+        topMessage2.scale.x = topMessage2.scale.y = topLayerScale.scale;
     });
 }
 

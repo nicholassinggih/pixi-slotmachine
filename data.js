@@ -1,5 +1,5 @@
 var data = {
-    score: 0,
+    initialScore: 0,
     matrix: [
         [0, 0, 0, 0, 0, 0],
         [1, 1, 1, 1, 1, 1],
