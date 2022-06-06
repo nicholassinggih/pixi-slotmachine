@@ -169,6 +169,7 @@ app.loader
 
 function closeLoadingStage() {
     app.stage.removeChild(loadingStage);
+    gameLayer.addChildAt(woodenBg, 0);
 }
 
 
@@ -208,11 +209,6 @@ function onAssetsLoaded() {
         return PIXI.Texture.from(f);
     }); 
     
-
-    
-
-    
-
     // Build the reels
     const reels = [];
     const reelContainer = buildReels(reels);
