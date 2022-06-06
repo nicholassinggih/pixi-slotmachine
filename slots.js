@@ -60,6 +60,23 @@ const smallFont = new PIXI.TextStyle({
     wordWrap: true,
     wordWrapWidth: 440,
 });
+
+const moneyFont = new PIXI.TextStyle({
+    fontFamily: 'Impact',
+    fontSize: 18,
+    fontWeight: 'bold',
+    fill: ['#ffff00'],
+    stroke: '#4a1850',
+    strokeThickness: 5,
+    dropShadow: true,
+    dropShadowColor: '#000000',
+    dropShadowBlur: 4,
+    dropShadowAngle: Math.PI / 6,
+    dropShadowDistance: 6,
+    wordWrap: true,
+    wordWrapWidth: 440,
+});
+
 const headerText = new PIXI.Text('POKEMON SLOTS', titleStyle);
 const normalSpin = new PIXI.Text('Normal Spin', smallFont);
 const winningSpin = new PIXI.Text('Winning Spins', smallFont);
@@ -69,7 +86,7 @@ const win3x = new PIXI.Text('3x', smallFont);
 const win4x = new PIXI.Text('4x', smallFont);
 const win5x = new PIXI.Text('5x', smallFont);
 const winJackpot = new PIXI.Text('Jackpot!', smallFont);
-const scoreText = new PIXI.Text('Cash: $' + playerData.score, smallFont);
+const scoreText = new PIXI.Text('Cash: $' + playerData.score, moneyFont);
 
 document.body.appendChild(app.view);
 console.log(app.screen.height);
@@ -398,8 +415,13 @@ function onAssetsLoaded() {
     }
 
     function updateScore(newScore) {
-        playerData.score = newScore;
-        scoreText.text = 'Cash: $' + playerData.score;
+        let diff = newScore - playerData.score;
+        let time = 800 + Math.sqrt(diff);
+        tweenTo(playerData, 'score', newScore, time, backout(0), null, () => {
+            runnning = false;
+        })
+        // playerData.score = newScore;
+        // scoreText.text = 'Cash: $' + playerData.score;
     }
 
     function processWinning(result) {
@@ -409,7 +431,6 @@ function onAssetsLoaded() {
             let winning = data.winnings[winCode];
             updateScore(playerData.score + winning);
         }
-        running = false;
 
 
     }
@@ -542,6 +563,10 @@ function onAssetsLoaded() {
                 }
             }
         }
+    });
+
+    app.ticker.add((delta) => {
+        scoreText.text = 'Cash: $' + playerData.score.toFixed(0);
     });
 }
 
