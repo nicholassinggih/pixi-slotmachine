@@ -78,6 +78,9 @@ app.loader
 const loadingStage = new PIXI.Container();
 loadingStage.x = 0;
 loadingStage.y = 0;
+loadingStage.width = INIT_WIDTH;
+loadingStage.height = INIT_HEIGHT;
+
 const woodenBg = new PIXI.TilingSprite();
 woodenBg.texture = PIXI.Texture.from('wooden-bg.png');
 woodenBg.width = INIT_WIDTH;
@@ -88,8 +91,8 @@ loadingStage.addChild(woodenBg);
 const gameLayer = new PIXI.Container();
 gameLayer.x = 0;
 gameLayer.y = 0;
-gameLayer.width = app.screen.width;
-gameLayer.height = app.screen.height;
+gameLayer.width = INIT_WIDTH;
+gameLayer.height = INIT_HEIGHT;
 app.stage.addChild(gameLayer);
 
 app.stage.addChild(loadingStage);
@@ -155,7 +158,7 @@ function resize() {
 
 
 function getReelWidth() {
-    return app.screen.width / REEL_COUNT;
+    return INIT_WIDTH / REEL_COUNT;
 }
 
 // onAssetsLoaded handler builds the example.
@@ -312,15 +315,15 @@ function onAssetsLoaded() {
         // margin = (app.screen.height - reelContainer.height ) / 2;
         reelContainer.y = (2 - HIDDEN_SYMBOLS) * (SYMBOL_SIZE + SYMBOL_MARGIN);
         // reelContainer.y = (SYMBOL_SIZE + SYMBOL_MARGIN);
-        reelContainer.x = Math.round(app.screen.width - getReelWidth() * REEL_COUNT);
+        reelContainer.x = Math.round(INIT_WIDTH - getReelWidth() * REEL_COUNT);
 
         topBar.beginFill(0, 1);
-        topBar.drawRect(0, 0, app.screen.width, margin);
+        topBar.drawRect(0, 0, INIT_WIDTH, margin);
 
         // bottomBar.y = reelContainer.y + reelContainer.height + SYMBOL_MARGIN - SYMBOL_SIZE;
         bottomBar.y = reelContainer.y + reelContainer.height + SYMBOL_MARGIN - SYMBOL_SIZE;
         bottomBar.beginFill(0, 1);
-        bottomBar.drawRect(0, 0, app.screen.width, app.screen.height - bottomBar.y );
+        bottomBar.drawRect(0, 0, INIT_WIDTH, INIT_HEIGHT - bottomBar.y );
         
 
         normalSpin.x = Math.round((bottomBar.width - normalSpin.width) / 2);
