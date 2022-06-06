@@ -71,9 +71,8 @@ console.log(app.screen.height);
 IMG_FILES.forEach(f => {
     app.loader.add(f, f);
 });
-app.loader
-    .load(onAssetsLoaded);
 
+let gameLoaded = false;
 // create loading screen
 const loadingStage = new PIXI.Container();
 loadingStage.x = 0;
@@ -119,13 +118,54 @@ loadingStage.addChild(slotLogo);
 const startButton = new PIXI.Text('START GAME', titleStyle);
 startButton.x = (INIT_WIDTH - startButton.width) / 2;
 startButton.y = (INIT_HEIGHT - startButton.height * 2);
+startButton.visible = false;
 loadingStage.addChild(startButton);
+
+const loadingBar = new PIXI.Graphics();
+loadingBar.x = INIT_WIDTH * 0.1;
+loadingBar.y = (INIT_HEIGHT - startButton.height * 2);
+let bgRotate = PIXI.Sprite.from('bg_rotate.jpg');
+bgRotate.scale.x = bgRotate.scale.y = 30/bgRotate.width;
+loadingBar.lineTextureStyle({ width: startButton.height, texture: bgRotate.texture});
+loadingStage.addChild(loadingBar);
+
+const loadingBarMask = new PIXI.Graphics();
+loadingBarMask.x = loadingBar.x;
+loadingBarMask.y = loadingBar.y;
+// loadingBarMask.width = INIT_WIDTH * 0.8 - loadingBar.x;
+// loadingBarMask.height = startButton.height;
+loadingBarMask.beginFill(0, 1);
+loadingBarMask.drawRoundedRect(0, 0, INIT_WIDTH * 0.8, startButton.height, 24);
+loadingBar.mask = loadingBarMask;
+loadingStage.addChild(loadingBarMask);
+
+const loadingText = new PIXI.Text('Loading ', titleStyle);
+loadingText.x = (INIT_WIDTH * 0.32);
+loadingText.y = (INIT_HEIGHT - startButton.height * 2);
+loadingStage.addChild(loadingText);
 
 startButton.interactive = true;
 startButton.buttonMode = true;
 startButton.addListener('pointerdown', () => {
-    closeLoadingStage();
+    if (gameLoaded) closeLoadingStage();
 });
+
+app.loader.onProgress.add(() => {
+    loadingBar.moveTo(0, startButton.height / 2);
+    loadingBar.lineTo(INIT_WIDTH * 0.8 * app.loader.progress / 100, startButton.height / 2);
+    loadingText.text = "Loading " + app.loader.progress.toFixed(2) + "%";
+});
+
+app.loader.onComplete.add(() => {
+    loadingBar.visible = false;
+    loadingText.visible = false;
+    startButton.visible = true;
+    gameLoaded = true;
+});
+
+app.loader
+    .load(onAssetsLoaded);
+
 
 function closeLoadingStage() {
     app.stage.removeChild(loadingStage);
