@@ -88,6 +88,12 @@ const win5x = new PIXI.Text('5x', smallFont);
 const winJackpot = new PIXI.Text('Jackpot!', smallFont);
 const scoreText = new PIXI.Text('Cash: $' + playerData.score, moneyFont);
 
+let symbolScale = {
+    scale: 1
+};
+
+let animatedSymbols = [];
+
 document.body.appendChild(app.view);
 console.log(app.screen.height);
 
@@ -385,9 +391,9 @@ function onAssetsLoaded() {
     }
 
     function checkMatches() {
-        let resultMatrix = reels.map(r => {
+        let resultMatrix = reels.map((r, reelId) => {
             let offset = (SYMBOL_PER_REEL - (Math.floor(r.position) % SYMBOL_PER_REEL) + HIDDEN_SYMBOLS) % SYMBOL_PER_REEL;
-            let symbols = [...r.symbolCodes].map((e, i) => {return {code: e, symbolId: i}; });
+            let symbols = [...r.symbolCodes].map((e, i) => {return {code: e, symbolId: i, reelId: reelId }; });
             let moving = symbols.splice(0, offset);
             return symbols.concat(...moving).splice(0, SYMBOL_PER_REEL - HIDDEN_SYMBOLS);
         });
@@ -420,8 +426,23 @@ function onAssetsLoaded() {
         tweenTo(playerData, 'score', newScore, time, backout(0), null, () => {
             running = false;
         })
-        // playerData.score = newScore;
-        // scoreText.text = 'Cash: $' + playerData.score;
+    }
+
+    function registerSymbolsPoppingAnimation(symbols) {
+        animatedSymbols = symbols;
+        symbols.forEach(s => {
+            s.x += (s.width / 2);
+            s.anchor.set(0.5, 0.5);
+        });
+    }
+
+    function unregisterSymbols() {
+        let symbols = animatedSymbols;
+        symbols.forEach(s => {
+            s.x -= (s.width / 2);
+            s.anchor.set(0);
+        });
+        animatedSymbols = [];
     }
 
     function processWinning(result) {
@@ -429,7 +450,22 @@ function onAssetsLoaded() {
         if (result.wins.length > 0) {
             let winCode = result.wins.length - 1 + (result.jackpotWin? 1 : 0);
             let winning = data.winnings[winCode];
-            updateScore(playerData.score + winning);
+
+            registerSymbolsPoppingAnimation(result.wins.flatMap(e => {
+                return result.resultMatrix[e].map( v => {
+                    return reels[v.reelId].symbols[v.symbolId];
+                })
+            }));
+
+            tweenTo(symbolScale, 'scale', 1.8, 1400, bounceOut, null, () => {
+                tweenTo(symbolScale, 'scale', 1, 1400, bounceOut, null, () => {
+                    unregisterSymbols();
+                    updateScore(playerData.score + winning);
+                })
+            })
+
+        } else {
+            running = false;
         }
 
 
@@ -540,6 +576,7 @@ function onAssetsLoaded() {
     // Listen for animate update.
     app.ticker.add((delta) => {
     // Update the slots.
+
         for (let i = 0; i < reels.length; i++) {
             const r = reels[i];
             // Update blur filter y amount based on speed.
@@ -552,7 +589,8 @@ function onAssetsLoaded() {
                 const s = r.symbols[j];
                 const prevy = s.y;
                 const symbolPosition = r.position + j;
-                s.y = (((symbolPosition) % r.symbols.length) - 1) * (SYMBOL_SIZE + SYMBOL_MARGIN);
+                let additionalY = (s.anchor._y == 0.5? (s.height / 3) : 0);
+                s.y = (((symbolPosition) % r.symbols.length) - 1) * (SYMBOL_SIZE + SYMBOL_MARGIN) + additionalY;
                 if (s.y < 0 && prevy > SYMBOL_SIZE && r.symbolImmutableFlag[j] == false) {
                     // Detect going over and swap a texture.
                     let nextSymbol = Math.floor(Math.random() * slotTextures.length); 
@@ -567,6 +605,13 @@ function onAssetsLoaded() {
 
     app.ticker.add((delta) => {
         scoreText.text = 'Cash: $' + playerData.score.toFixed(0);
+    });
+
+    
+    app.ticker.add((delta) => {
+        animatedSymbols.forEach(s => {
+            s.scale.x = s.scale.y = Math.min(SYMBOL_SIZE / s.texture.width, SYMBOL_SIZE / s.texture.height) * symbolScale.scale;
+        })
     });
 }
 
@@ -703,4 +748,23 @@ let quintIn = () => { return getPowIn(5); }
     return function(t) {
         return Math.pow(t,pow);
     };
+};
+
+// bounce out function from Ease.js
+/**
+	 * @method bounceOut
+	 * @param {Number} t
+	 * @static
+	 * @return {Number}
+	 **/
+function bounceOut(t) {
+    if (t < 1/2.75) {
+        return (7.5625*t*t);
+    } else if (t < 2/2.75) {
+        return (7.5625*(t-=1.5/2.75)*t+0.75);
+    } else if (t < 2.5/2.75) {
+        return (7.5625*(t-=2.25/2.75)*t+0.9375);
+    } else {
+        return (7.5625*(t-=2.625/2.75)*t +0.984375);
+    }
 };
