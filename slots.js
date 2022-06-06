@@ -13,6 +13,10 @@ const IMG_FILES = [
     'pi1.png', 'pi2.png', 'pi3.png', 'pi4.png', 'pi5.png'
 ]
 
+let playerData = {
+    score: 0
+};
+
 const app = new PIXI.Application({ 
     backgroundColor: 0x1099bb,
     width: INIT_WIDTH, 
@@ -65,6 +69,7 @@ const win3x = new PIXI.Text('3x', smallFont);
 const win4x = new PIXI.Text('4x', smallFont);
 const win5x = new PIXI.Text('5x', smallFont);
 const winJackpot = new PIXI.Text('Jackpot!', smallFont);
+const scoreText = new PIXI.Text('Cash: $' + playerData.score, smallFont);
 
 document.body.appendChild(app.view);
 console.log(app.screen.height);
@@ -337,6 +342,7 @@ function onAssetsLoaded() {
                                 let textureId = results[k][i];
                                 r.symbolImmutableFlag[id] = true;
                                 s.texture = slotTextures[textureId];
+                                // s.anchor.set(0.5);
                                 r.symbolCodes[id] = textureId;
                                 s.scale.x = s.scale.y = Math.min(SYMBOL_SIZE / s.texture.width, SYMBOL_SIZE / s.texture.height);
                                 s.x = Math.round((getReelWidth() - s.width) / 2);
@@ -356,27 +362,61 @@ function onAssetsLoaded() {
 
     // Reels done handler.
     function reelsComplete() {
-        running = false;
         setTimeout(() => {
             checkMatches();
         }, 0); 
     }
 
     function checkMatches() {
-        let debugv = reels.map( r=> [r.symbolCodes, r.position, Math.floor(r.position) % SYMBOL_PER_REEL]);
-        console.log(reels.map(r => {
+        let resultMatrix = reels.map(r => {
             let offset = (SYMBOL_PER_REEL - (Math.floor(r.position) % SYMBOL_PER_REEL) + HIDDEN_SYMBOLS) % SYMBOL_PER_REEL;
-            let symbols = [...r.symbolCodes];
+            let symbols = [...r.symbolCodes].map((e, i) => {return {code: e, symbolId: i}; });
             let moving = symbols.splice(0, offset);
             return symbols.concat(...moving).splice(0, SYMBOL_PER_REEL - HIDDEN_SYMBOLS);
-        }));
+        });
+
+        let firstColumn = [...resultMatrix[0]];
+        resultMatrix = resultMatrix[0].map((_, colIndex) => resultMatrix.map(row => row[colIndex]));
+
+        let wins = [];
+        let jackpotWin = false;
+        for (let i = 0; i < resultMatrix.length; i++) {
+            if (resultMatrix[i].every(val => val.code == resultMatrix[i][0].code)) {
+                wins.push(i);
+            }
+        }
+        if (wins.length == 5 && firstColumn.every(val => val.code == 0)) {
+            jackpotWin = true;
+        }
+
+        processWinning({
+            wins: wins,
+            jackpotWin: jackpotWin,
+            resultMatrix: resultMatrix
+        });
+
+    }
+
+    function updateScore(newScore) {
+        playerData.score = newScore;
+        scoreText.text = 'Cash: $' + playerData.score;
+    }
+
+    function processWinning(result) {
+
+        if (result.wins.length > 0) {
+            let winCode = result.wins.length - 1 + (result.jackpotWin? 1 : 0);
+            let winning = data.winnings[winCode];
+            updateScore(playerData.score + winning);
+        }
+        running = false;
+
+
     }
 
     function buildHUD(gameLayer) {
         margin = SYMBOL_SIZE * 1;// (app.screen.height - 20 - SYMBOL_SIZE * (SYMBOL_PER_REEL)) / 2;
-        // margin = (app.screen.height - reelContainer.height ) / 2;
         reelContainer.y = (2 - HIDDEN_SYMBOLS) * (SYMBOL_SIZE + SYMBOL_MARGIN);
-        // reelContainer.y = (SYMBOL_SIZE + SYMBOL_MARGIN);
         reelContainer.x = Math.round(INIT_WIDTH - getReelWidth() * REEL_COUNT);
 
         topBar.beginFill(0, 1);
@@ -391,6 +431,10 @@ function onAssetsLoaded() {
         normalSpin.x = Math.round((bottomBar.width - normalSpin.width) / 2);
         normalSpin.y = ( bottomBar.height - normalSpin.height ) / 2; 
         bottomBar.addChild(normalSpin);
+
+        scoreText.x = 30;
+        scoreText.y = normalSpin.y;
+        bottomBar.addChild(scoreText);
 
         winningSpin.x = normalSpin.x + normalSpin.width + 20;
         winningSpin.y = normalSpin.y - winningSpin.height; 
