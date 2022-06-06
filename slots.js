@@ -418,7 +418,7 @@ function onAssetsLoaded() {
         let diff = newScore - playerData.score;
         let time = 800 + Math.sqrt(diff);
         tweenTo(playerData, 'score', newScore, time, backout(0), null, () => {
-            runnning = false;
+            running = false;
         })
         // playerData.score = newScore;
         // scoreText.text = 'Cash: $' + playerData.score;
