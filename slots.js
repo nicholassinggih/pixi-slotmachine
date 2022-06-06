@@ -9,7 +9,7 @@ const CONTAINER_WIDTH = 800;
 const CONTAINER_HEIGHT = screen.height;
 const REEL_COUNT = data.matrix ? data.matrix.length : 5;
 const REEL_WIDTH = CONTAINER_WIDTH / REEL_COUNT;
-const IMG_FILES = [
+const SYMBOL_FILES = [
     'pi1.png', 'pi2.png', 'pi3.png', 'pi4.png', 'pi5.png'
 ]
 
@@ -121,7 +121,7 @@ let animatedSymbols = [];
 document.body.appendChild(app.view);
 console.log(app.screen.height);
 
-IMG_FILES.forEach(f => {
+SYMBOL_FILES.forEach(f => {
     app.loader.add(f, f);
 });
 
@@ -280,9 +280,9 @@ function getReelWidth() {
 }
 
 // onAssetsLoaded handler builds the example.
-function onAssetsLoaded() {
+function onAssetsLoaded(loader, resources) {
     // Create different slot symbols.
-    const slotTextures = IMG_FILES.map(f => {
+    const slotTextures = SYMBOL_FILES.map(f => {
         return PIXI.Texture.from(f);
     }); 
     
