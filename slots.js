@@ -74,6 +74,63 @@ IMG_FILES.forEach(f => {
 app.loader
     .load(onAssetsLoaded);
 
+// create loading screen
+const loadingStage = new PIXI.Container();
+loadingStage.x = 0;
+loadingStage.y = 0;
+const woodenBg = new PIXI.TilingSprite();
+woodenBg.texture = PIXI.Texture.from('wooden-bg.png');
+woodenBg.width = INIT_WIDTH;
+woodenBg.height = INIT_HEIGHT;
+loadingStage.addChild(woodenBg);
+
+// build a container for the game layer
+const gameLayer = new PIXI.Container();
+gameLayer.x = 0;
+gameLayer.y = 0;
+gameLayer.width = app.screen.width;
+gameLayer.height = app.screen.height;
+app.stage.addChild(gameLayer);
+
+app.stage.addChild(loadingStage);
+
+const pikachuLogo = new PIXI.Sprite();
+pikachuLogo.texture = PIXI.Texture.from('pikachu-icon.png')
+pikachuLogo.x = INIT_WIDTH * 0.25;
+pikachuLogo.y = INIT_HEIGHT * 0.05;
+loadingStage.addChild(pikachuLogo);
+
+const pokemonTitle = new PIXI.Sprite();
+pokemonTitle.texture = PIXI.Texture.from('pokemon-logo.png')
+pokemonTitle.scale.x = pokemonTitle.scale.y = 3; 
+pokemonTitle.x = (INIT_WIDTH * 0.05);
+pokemonTitle.y = (INIT_HEIGHT * 0.24);
+loadingStage.addChild(pokemonTitle);
+
+const slotLogo = new PIXI.Sprite();
+slotLogo.texture = PIXI.Texture.from('slot-logo.png')
+slotLogo.x = (INIT_WIDTH * 0.24);
+slotLogo.y = (INIT_HEIGHT + (0.9 * slotLogo.height)) / 2;
+loadingStage.addChild(slotLogo);
+
+const startButton = new PIXI.Text('START GAME', titleStyle);
+startButton.x = (INIT_WIDTH - startButton.width) / 2;
+startButton.y = (INIT_HEIGHT - startButton.height * 2);
+loadingStage.addChild(startButton);
+
+startButton.interactive = true;
+startButton.buttonMode = true;
+startButton.addListener('pointerdown', () => {
+    closeLoadingStage();
+});
+
+function closeLoadingStage() {
+    app.stage.removeChild(loadingStage);
+}
+
+
+getContainerDiv().appendChild(getParentCanvas());
+resize();
 
 // Listen for window resize events
 window.addEventListener('resize', resize);
@@ -98,7 +155,7 @@ function resize() {
 
 
 function getReelWidth() {
-    return INIT_WIDTH / REEL_COUNT;
+    return app.screen.width / REEL_COUNT;
 }
 
 // onAssetsLoaded handler builds the example.
@@ -109,41 +166,9 @@ function onAssetsLoaded() {
     }); 
     
 
-    // create loading screen
-    const loadingStage = new PIXI.Container();
-    loadingStage.x = 0;
-    loadingStage.y = 0;
-    const woodenBg = new PIXI.TilingSprite();
-    woodenBg.texture = PIXI.Texture.from('wooden-bg.png');
-    woodenBg.width = INIT_WIDTH;
-    woodenBg.height = INIT_HEIGHT;
-    loadingStage.addChild(woodenBg);
-
-    const pikachuLogo = new PIXI.Sprite();
-    pikachuLogo.texture = PIXI.Texture.from('pikachu-icon.png')
-    pikachuLogo.x = INIT_WIDTH * 0.25;
-    pikachuLogo.y = INIT_HEIGHT * 0.05;
-    loadingStage.addChild(pikachuLogo);
     
-    const pokemonTitle = new PIXI.Sprite();
-    pokemonTitle.texture = PIXI.Texture.from('pokemon-logo.png')
-    pokemonTitle.x = (INIT_WIDTH - pokemonTitle.width) / 2;
-    pokemonTitle.y = (INIT_HEIGHT - pokemonTitle.height) / 2;
-    loadingStage.addChild(pokemonTitle);
 
-    const slotLogo = new PIXI.Sprite();
-    slotLogo.texture = PIXI.Texture.from('slot-logo.png')
-    slotLogo.x = (INIT_WIDTH - slotLogo.width) / 2;
-    slotLogo.y = (INIT_HEIGHT + (0.9 * slotLogo.height)) / 2;
-    loadingStage.addChild(slotLogo);
-
-    // build a container for the game layer
-    const gameLayer = new PIXI.Container();
-    gameLayer.x = 0;
-    gameLayer.y = 0;
-    app.stage.addChild(gameLayer);
-
-    app.stage.addChild(loadingStage);
+    
 
     // Build the reels
     const reels = [];
@@ -157,8 +182,6 @@ function onAssetsLoaded() {
     let running = false;
 
     
-    getContainerDiv().appendChild(getParentCanvas());
-    resize();
 
     function buildReels(reels) {
         let reelContainer = new PIXI.Container();
